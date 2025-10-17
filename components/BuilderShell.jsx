@@ -5,6 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import StepHeader from "./StepHeader";
 import CustomerForm from "./CustomerForm";
+import ProductCard from "./ProductCard";
 import { computeTotals } from "../lib/totals";
 
 export default function BuilderShell({ data }) {
@@ -179,27 +180,26 @@ export default function BuilderShell({ data }) {
 						<div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3'>
 							{stepItems.map((it) => {
 								const selected = selectedIdsForCurrent.includes(it.id);
+								// Use first available variant to look up a handle from /api/enrich
 								const firstVar = Object.values(it.variantIdByStore || {})[0];
-								const hasPrice = !!enrich?.variants?.[String(firstVar)];
+								const handle = firstVar ? enrich?.variants?.[String(firstVar)]?.handle : null;
+								// Default to your main storefront; Codex can later swap to per-store links.
+								const productUrl = handle
+									? `https://autospec4x4.com.au/products/${handle}`
+									: undefined;
+
 								return (
-									<Button
+									<ProductCard
 										key={it.id}
-										variant={selected ? "default" : "outline"}
-										className='w-full justify-start items-start text-left h-auto p-4 whitespace-normal break-words normal-case overflow-hidden'
-										onClick={() => toggleProduct(it.id)}
-										aria-pressed={selected}
-									>
-										<div className='flex flex-col items-start'>
-											<span className='font-semibold break-words whitespace-normal'>{it.name}</span>
-											<span className='text-xs text-[var(--clr-muted)]'>
-												{loading ? "Loading…" : hasPrice ? "View details" : ""}
-											</span>
-										</div>
-									</Button>
+										name={it.name}
+										selected={selected}
+										productUrl={productUrl}
+										onToggle={() => toggleProduct(it.id)}
+									/>
 								);
 							})}
 							{stepItems.length === 0 && (
-								<div className='text-sm text-[var(--clr-muted)]'>
+								<div className='text-sm text-muted-foreground'>
 									No options defined for this step yet.
 								</div>
 							)}

@@ -66,18 +66,27 @@ export default function BuilderShell({ data }) {
 		return arr.length > 0;
 	}
 
+	// Map your vehicle IDs to a vehicle type key used by the metafield
+	const VEHICLE_TYPE_BY_VEHICLE = {
+		ford_ranger: "dual_cab",
+		toyota_hilux: "dual_cab",
+		toyota_79: "79_series",
+		chevy_silverado: "american",
+	};
+
+	const selectedVehicleType = vehicle ? VEHICLE_TYPE_BY_VEHICLE[vehicle] || vehicle : null;
+
 	// Items belonging to the CURRENT step with compatibility filtering
 	const stepItems = useMemo(() => {
 		const base = items.filter((i) => i.stepId === step.id);
-		// Show everything on vehicle step or until a vehicle is chosen
-		if (step.id === "vehicle_select" || !vehicle) return base;
+		if (step.id === "vehicle_select" || !selectedVehicleType) return base;
 
 		return base.filter((i) => {
-			const keys = i.vehicleTypeKeys || []; // comes from loadData() via Shopify metafield
+			const keys = i.vehicleTypeKeys || [];
 			if (!keys.length) return true; // no metafield -> fits all
-			return keys.includes(vehicle); // exact match against selected vehicle id
+			return keys.includes(selectedVehicleType); // match type key
 		});
-	}, [items, step.id, vehicle]);
+	}, [items, step.id, selectedVehicleType]);
 
 	// Selected ids for the current step
 	const selectedIdsForCurrent = selections[step.id] ?? [];

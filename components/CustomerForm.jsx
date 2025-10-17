@@ -8,13 +8,12 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 const initial = { ok: false };
-const hasItems = (itemsForSubmit?.length ?? 0) > 0;
 
 export default function CustomerForm({
 	vehicle,
 	selections,
 	selectedVariantIds,
-	itemsForSubmit = [],
+	itemsForSubmit = [], // ← ensure default here
 }) {
 	const [state, formAction, pending] = useActionState(submitQuoteAction, initial);
 
@@ -35,9 +34,10 @@ export default function CustomerForm({
 			<p className='mt-1 text-xs text-red-600'>{state.errors[name]}</p>
 		) : null;
 
+	const hasItems = itemsForSubmit.length > 0;
+
 	return (
 		<form action={formAction} className='grid gap-4 sm:grid-cols-2'>
-			{/* Hidden JSON payloads */}
 			<input type='hidden' name='vehicleId' value={vehicle || ""} />
 			<input type='hidden' name='selectionsJSON' value={JSON.stringify(selections || {})} />
 			<input type='hidden' name='itemsJSON' value={JSON.stringify(itemsForSubmit)} />
@@ -116,7 +116,7 @@ export default function CustomerForm({
 			<div className='sm:col-span-2'>
 				<Button type='submit' disabled={pending || !hasItems} className='w-full'>
 					{pending ? "Submitting…" : "Submit Quote"}
-				</Button>{" "}
+				</Button>
 			</div>
 		</form>
 	);

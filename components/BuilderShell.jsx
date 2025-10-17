@@ -15,6 +15,7 @@ export default function BuilderShell({ data }) {
 
 	const [vehicle, setVehicle] = useState(null);
 	const [stepIndex, setStepIndex] = useState(0);
+
 	const step = steps[stepIndex] ?? { id: "", title: "", selectionMode: "single", required: false };
 
 	// selections: { [stepId]: string[] }
@@ -65,15 +66,15 @@ export default function BuilderShell({ data }) {
 	}
 
 	// Items belonging to the CURRENT step (no filtering for compatibility)
-	const stepItems = items.filter((i) => i.stepId === step.id);
+	const stepItems = useMemo(() => items.filter((i) => i.stepId === step.id), [items, step.id]);
 
 	// Selected ids for the current step
 	const selectedIdsForCurrent = selections[step.id] ?? [];
 
-	// ALL selected variantIds across ALL steps (for summary + submit)
+	// ALL selected variantIds across ALL steps (for summary)
 	const allSelectedVariantIds = useMemo(() => {
 		const ids = [];
-		for (const [stepId, pids] of Object.entries(selections)) {
+		for (const [, pids] of Object.entries(selections)) {
 			for (const pid of pids) {
 				const item = items.find((x) => x.id === pid);
 				const vid = item?.variantIdByStore?.autospec ?? item?.variantIdByStore?.linex;
@@ -105,7 +106,7 @@ export default function BuilderShell({ data }) {
 
 	const totals = useMemo(() => {
 		const mapped = allSelectedVariantIds.map((variantId) => ({ variantId }));
-		return computeTotals(mapped, enrich?.variants);
+		return computeTotals(mapped, enrich?.variants || {});
 	}, [allSelectedVariantIds, enrich]);
 
 	// ---------- ACTIONS ----------
@@ -122,12 +123,21 @@ export default function BuilderShell({ data }) {
 	}
 
 	function goBack() {
-		setStepIndex((i) => Math.max(0, i - 1));
+		setStepIndex((i) => {
+			const next = Math.max(0, i - 1);
+			// scroll to top after step change
+			if (typeof window !== "undefined") requestAnimationFrame(() => window.scrollTo(0, 0));
+			return next;
+		});
 	}
 
 	function goNext() {
 		if (isLastStep) return; // last step handled by <CustomerForm />
-		setStepIndex((i) => Math.min(steps.length - 1, i + 1));
+		setStepIndex((i) => {
+			const next = Math.min(steps.length - 1, i + 1);
+			if (typeof window !== "undefined") requestAnimationFrame(() => window.scrollTo(0, 0));
+			return next;
+		});
 	}
 
 	// ---------- RENDER ----------
@@ -136,7 +146,7 @@ export default function BuilderShell({ data }) {
 			{/* Sticky progress header */}
 			<StepHeader steps={steps} stepIndex={stepIndex} />
 
-			{/* STEP  */}
+			{/* STEP */}
 			<Card>
 				<CardHeader>
 					<CardTitle className='text-lg'>{step.title}</CardTitle>
@@ -223,8 +233,8 @@ export default function BuilderShell({ data }) {
 				</CardHeader>
 				<CardContent className='space-y-1'>
 					<div className='text-sm text-[var(--clr-muted)]'>Running Total</div>
-					<div className='text-3xl font-bold'>${totals.price.toLocaleString()}</div>
-					<div className='text-sm'>Weight: {totals.weightKg} kg</div>
+					<div className='text-3xl font-bold'>${Number(totals.price || 0).toLocaleString()}</div>
+					<div className='text-sm'>Weight: {Number(totals.weightKg || 0)} kg</div>
 				</CardContent>
 			</Card>
 		</div>

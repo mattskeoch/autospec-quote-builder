@@ -1,4 +1,5 @@
-// app/page.jsx
+export const runtime = "edge";
+export const dynamic = "force-dynamic";
 import BuilderShell from "../components/BuilderShell";
 import { loadData } from "../lib/data";
 

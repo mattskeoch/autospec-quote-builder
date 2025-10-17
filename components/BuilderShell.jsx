@@ -199,21 +199,18 @@ export default function BuilderShell({ data }) {
 						<div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3'>
 							{stepItems.map((it) => {
 								const selected = selectedIdsForCurrent.includes(it.id);
-								// Use first available variant to look up a handle from /api/enrich
 								const firstVar = Object.values(it.variantIdByStore || {})[0];
-								const handle = firstVar ? enrich?.variants?.[String(firstVar)]?.handle : null;
-								// Default to your main storefront; Codex can later swap to per-store links.
-								const productUrl = handle
-									? `https://autospec4x4.com.au/products/${handle}`
-									: undefined;
+								const v = firstVar ? enrich?.variants?.[String(firstVar)] : null;
 
 								return (
 									<ProductCard
 										key={it.id}
 										name={it.name}
 										selected={selected}
-										productUrl={productUrl}
 										onToggle={() => toggleProduct(it.id)}
+										productUrl={v?.productUrl}
+										image={v?.image}
+										price={typeof v?.price === "number" ? v.price : undefined}
 									/>
 								);
 							})}

@@ -83,6 +83,26 @@ export default function BuilderShell({ data }) {
 		return ids;
 	}, [selections, items]);
 
+	// Build the payload items the server expects (prefer per-store IDs)
+	const itemsForSubmit = useMemo(() => {
+		const out = [];
+		for (const [, pids] of Object.entries(selections)) {
+			for (const pid of pids) {
+				const it = items.find((x) => x.id === pid);
+				if (!it) continue;
+				const vbs = it.variantIdByStore || {};
+				if (vbs.autospec || vbs.linex) {
+					out.push({ variantIdByStore: vbs, quantity: 1 });
+				} else {
+					// fallback: if only one id is present (legacy)
+					const single = vbs.autospec ?? vbs.linex;
+					if (single) out.push({ variantId: Number(single), quantity: 1 });
+				}
+			}
+		}
+		return out;
+	}, [selections, items]);
+
 	const totals = useMemo(() => {
 		const mapped = allSelectedVariantIds.map((variantId) => ({ variantId }));
 		return computeTotals(mapped, enrich?.variants);
@@ -143,6 +163,7 @@ export default function BuilderShell({ data }) {
 							vehicle={vehicle}
 							selections={selections}
 							selectedVariantIds={allSelectedVariantIds}
+							itemsForSubmit={itemsForSubmit}
 						/>
 					) : (
 						<div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3'>

@@ -8,8 +8,9 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 const initial = { ok: false };
+const hasItems = (itemsForSubmit?.length ?? 0) > 0;
 
-export default function CustomerForm({ vehicle, selections, selectedVariantIds }) {
+export default function CustomerForm({ vehicle, selections, selectedVariantIds, itemsForSubmit }) {
 	const [state, formAction, pending] = useActionState(submitQuoteAction, initial);
 
 	useEffect(() => {
@@ -34,11 +35,7 @@ export default function CustomerForm({ vehicle, selections, selectedVariantIds }
 			{/* Hidden JSON payloads */}
 			<input type='hidden' name='vehicleId' value={vehicle || ""} />
 			<input type='hidden' name='selectionsJSON' value={JSON.stringify(selections || {})} />
-			<input
-				type='hidden'
-				name='itemsJSON'
-				value={JSON.stringify((selectedVariantIds || []).map((v) => ({ variantId: v })))}
-			/>
+			<input type='hidden' name='itemsJSON' value={JSON.stringify(itemsForSubmit || [])} />
 
 			<div>
 				<Label htmlFor='firstName'>First name</Label>
@@ -112,7 +109,7 @@ export default function CustomerForm({ vehicle, selections, selectedVariantIds }
 			)}
 
 			<div className='sm:col-span-2'>
-				<Button type='submit' disabled={pending} className='w-full'>
+				<Button type='submit' disabled={pending || !hasItems} className='w-full'>
 					{pending ? "Submitting…" : "Submit Quote"}
 				</Button>
 			</div>

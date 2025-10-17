@@ -25,7 +25,7 @@ export default function CustomerForm({
 }) {
 	const [state, formAction, pending] = useActionState(submitQuoteAction, initial);
 
-	// Local state for the shadcn Select (since it isn't a native <select>)
+	// Local state for the shadcn Select (since it isn't a native <select>).
 	const [auState, setAuState] = useState("");
 
 	useEffect(() => {

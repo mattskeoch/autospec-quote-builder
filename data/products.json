@@ -1,0 +1,167 @@
+{
+  "vehicles": [
+    {
+      "id": "ford_ranger",
+      "make": "Ford",
+      "model": "Ranger"
+    },
+    {
+      "id": "toyota_hilux",
+      "make": "Toyota",
+      "model": "Hilux"
+    },
+    {
+      "id": "toyota_79",
+      "make": "Toyota",
+      "model": "79 Series"
+    },
+    {
+      "id": "chevy_silverado",
+      "make": "Chevy",
+      "model": "Silverado"
+    }
+  ],
+  "steps": [
+    {
+      "id": "vehicle_select",
+      "title": "Select your vehicle",
+      "selectionMode": "single",
+      "required": true
+    },
+    {
+      "id": "build_type",
+      "title": "Choose build type",
+      "selectionMode": "single",
+      "required": true
+    },
+    {
+      "id": "tray_select",
+      "title": "Tray & extras",
+      "selectionMode": "multi",
+      "required": true
+    },
+    {
+      "id": "canopy_select",
+      "title": "Canopies",
+      "selectionMode": "single",
+      "required": false
+    },
+    {
+      "id": "traysides_select",
+      "title": "Tray sides",
+      "selectionMode": "single",
+      "required": false
+    },
+    {
+      "id": "customer_form",
+      "title": "Your details",
+      "selectionMode": "none",
+      "required": true
+    }
+  ],
+  "items": [
+    {
+      "id": "build_tray_only",
+      "name": "Tray Only",
+      "stepId": "build_type",
+      "variantIdByStore": {},
+      "compat": {
+        "vehicles": "*"
+      }
+    },
+    {
+      "id": "build_tray_canopy",
+      "name": "Tray + Canopy",
+      "stepId": "build_type",
+      "variantIdByStore": {},
+      "compat": {
+        "vehicles": "*"
+      }
+    },
+    {
+      "id": "tray_1700_trundle_mb",
+      "name": "Aluminium Dual Cab Tray with Trundle - 1700mm - Matte Black",
+      "stepId": "tray_select",
+      "variantIdByStore": {
+        "autospec": 50506304749888,
+        "linex": 44263190003887
+      },
+      "compat": {
+        "vehicles": [
+          "toyota_hilux",
+          "ford_ranger"
+        ]
+      }
+    },
+    {
+      "id": "at_tray_2200",
+      "name": "Aluminium American Truck Tray with Trundle - 2200mm - Matte Black",
+      "stepId": "tray_select",
+      "variantIdByStore": {
+        "autospec": 50506402103616,
+        "linex": 45034594402479
+      },
+      "compat": {
+        "vehicles": [
+          "chevy_silverado"
+        ]
+      }
+    },
+    {
+      "id": "headboard",
+      "name": "Aluminium Headboard - Matte Black",
+      "stepId": "tray_select",
+      "variantIdByStore": {
+        "autospec": 50506306814272,
+        "linex": 44263211073711
+      },
+      "compat": {
+        "vehicles": [
+          "toyota_hilux",
+          "ford_ranger"
+        ]
+      }
+    },
+    {
+      "id": "canopy_1400",
+      "name": "Aluminium Canopy 1400mm - Matte Black",
+      "stepId": "canopy_select",
+      "variantIdByStore": {
+        "autospec": 50506313105728,
+        "linex": 44263224541359
+      },
+      "compat": {
+        "vehicles": [
+          "toyota_hilux",
+          "ford_ranger"
+        ]
+      }
+    },
+    {
+      "id": "79_canopy_1700",
+      "name": "Aluminium 79 Series Canopy 1700mm - Matte Black",
+      "stepId": "canopy_select",
+      "variantIdByStore": {
+        "autospec": 50506317431104,
+        "linex": 44263228375215
+      },
+      "compat": {
+        "vehicles": [
+          "toyota_79"
+        ]
+      }
+    },
+    {
+      "id": "tray_sides_estimate",
+      "name": "Tray Sides (estimate)",
+      "stepId": "traysides_select",
+      "variantIdByStore": {
+        "autospec": 50909597630784,
+        "linex": 45721845006511
+      },
+      "compat": {
+        "vehicles": "*"
+      }
+    }
+  ]
+}

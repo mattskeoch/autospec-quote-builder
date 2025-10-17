@@ -66,18 +66,18 @@ export default function BuilderShell({ data }) {
 		return arr.length > 0;
 	}
 
-	// Items belonging to the CURRENT step (no filtering for compatibility)
+	// Items belonging to the CURRENT step with compatibility filtering
 	const stepItems = useMemo(() => {
-    const base = items.filter((i) => i.stepId === step.id);
-    // Show everything on vehicle step or until a vehicle is chosen
-    if (step.id === "vehicle_select" || !vehicle) return base;
-  
-    return base.filter((i) => {
-      const keys = i.vehicleTypeKeys || [];
-      if (!keys.length) return true;          // no metafield -> fits all
-      return keys.includes(vehicle);          // exact match against selected vehicle id
-    });
-  }, [items, step.id, vehicle]); = useMemo(() => items.filter((i) => i.stepId === step.id), [items, step.id]);
+		const base = items.filter((i) => i.stepId === step.id);
+		// Show everything on vehicle step or until a vehicle is chosen
+		if (step.id === "vehicle_select" || !vehicle) return base;
+
+		return base.filter((i) => {
+			const keys = i.vehicleTypeKeys || []; // comes from loadData() via Shopify metafield
+			if (!keys.length) return true; // no metafield -> fits all
+			return keys.includes(vehicle); // exact match against selected vehicle id
+		});
+	}, [items, step.id, vehicle]);
 
 	// Selected ids for the current step
 	const selectedIdsForCurrent = selections[step.id] ?? [];

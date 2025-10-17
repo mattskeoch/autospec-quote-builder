@@ -11,12 +11,32 @@ export async function POST(req) {
     });
   }
 
-  // TODO: replace with Shopify Admin draft order create; stub for now
-  const routed = String(customer?.state || '').toUpperCase() === 'WA' ? 'linex' : 'autospec';
-  const id = Math.floor(Date.now() / 1000);
-  const url = `https://example.com/${routed}/draft_orders/${id}`;
+  // pick store (example: WA -> LINEX)
+  const state = String(customer?.state || '').toUpperCase();
+  const storeKey = state === 'WA' ? 'LINEX' : 'AUTOSPEC';
 
-  return new Response(JSON.stringify({ ok: true, draftOrderId: id, orderUrl: url, store: routed }), {
+  const {
+    AUTOSPEC_SHOP_DOMAIN,
+    AUTOSPEC_ADMIN_TOKEN,
+    LINEX_SHOP_DOMAIN,
+    LINEX_ADMIN_TOKEN,
+  } = process.env;
+
+  const shopDomain =
+    storeKey === 'LINEX' ? LINEX_SHOP_DOMAIN : AUTOSPEC_SHOP_DOMAIN;
+  const adminToken =
+    storeKey === 'LINEX' ? LINEX_ADMIN_TOKEN : AUTOSPEC_ADMIN_TOKEN;
+
+  // TODO: swap stub with real Shopify Admin call using shopDomain/adminToken
+  const id = Math.floor(Date.now() / 1000);
+  const url = `https://${shopDomain}/admin/draft_orders/${id}`;
+
+  return new Response(JSON.stringify({
+    ok: true,
+    draftOrderId: id,
+    orderUrl: url,
+    store: storeKey.toLowerCase(),
+  }), {
     headers: { 'content-type': 'application/json' },
   });
 }

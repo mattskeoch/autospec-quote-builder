@@ -116,7 +116,7 @@ export default function BuilderShell({ data }) {
 			{/* Sticky progress header */}
 			<StepHeader steps={steps} stepIndex={stepIndex} />
 
-			{/* STEP */}
+			{/* STEP  */}
 			<Card>
 				<CardHeader>
 					<CardTitle className='text-lg'>{step.title}</CardTitle>
@@ -201,7 +201,7 @@ export default function BuilderShell({ data }) {
 					<CardTitle className='text-base'>Summary</CardTitle>
 				</CardHeader>
 				<CardContent className='space-y-1'>
-					<div className='text-sm text-[var(--clr-muted)]'>Running total</div>
+					<div className='text-sm text-[var(--clr-muted)]'>Running Total</div>
 					<div className='text-3xl font-bold'>${totals.price.toLocaleString()}</div>
 					<div className='text-sm'>Weight: {totals.weightKg} kg</div>
 				</CardContent>

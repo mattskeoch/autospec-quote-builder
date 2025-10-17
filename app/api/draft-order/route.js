@@ -1,5 +1,13 @@
 export const runtime = 'edge';
 
+/**
+ * Accepts items in EITHER format:
+ *   A) { variantId: number, quantity?: number }
+ *   B) { variantIdByStore: { autospec?: number|string, linex?: number|string }, quantity?: number }
+ *
+ * Server chooses correct variantId by store (state: WA -> LINEX, else AUTOSPEC).
+ */
+
 function pickStoreByState(state) {
   const s = String(state || '').toUpperCase().trim();
   return s === 'WA' ? 'LINEX' : 'AUTOSPEC';
@@ -26,26 +34,56 @@ function badRequest(message, extra = {}) {
   });
 }
 
-function shopifyError(status, payload) {
-  return new Response(JSON.stringify({ ok: false, error: 'shopify_error', status, payload }), {
+function shopifyError(status, payload, summary) {
+  return new Response(JSON.stringify({ ok: false, error: 'shopify_error', status, summary, payload }), {
     status: 502,
     headers: { 'content-type': 'application/json' },
   });
 }
 
+// Try to fetch a variant to verify it exists in this shop
 async function variantExists(domain, token, variantId) {
   const url = `https://${domain}/admin/api/2024-10/variants/${variantId}.json`;
-  const res = await fetch(url, {
-    method: 'GET',
-    headers: { 'X-Shopify-Access-Token': token }
-  });
+  const res = await fetch(url, { headers: { 'X-Shopify-Access-Token': token } });
   if (res.status === 404) return false;
   if (!res.ok) {
-    // Treat other errors as unknown; bubble up so user sees payload
     const j = await res.json().catch(() => ({}));
     throw { status: res.status, payload: j };
   }
   return true;
+}
+
+// Flatten Shopify error payloads into a readable single string
+function summarizeShopifyErrors(errPayload) {
+  try {
+    if (!errPayload) return 'Unknown Shopify error';
+    if (typeof errPayload === 'string') return errPayload;
+
+    // Common shapes: { errors: {base:[{message}]}} or { base: ['...'] } or { errors: '...' }
+    const e = errPayload.errors ?? errPayload;
+
+    if (Array.isArray(e)) return e.join(', ');
+    if (typeof e === 'string') return e;
+
+    if (e.base) {
+      if (Array.isArray(e.base)) {
+        const msgs = e.base.map(b => (typeof b === 'string' ? b : (b?.message || JSON.stringify(b))));
+        return msgs.join(', ');
+      }
+      if (typeof e.base === 'string') return e.base;
+    }
+
+    // key -> array or string
+    const parts = [];
+    for (const [k, v] of Object.entries(e)) {
+      if (Array.isArray(v)) parts.push(`${k}: ${v.join(', ')}`);
+      else if (typeof v === 'string') parts.push(`${k}: ${v}`);
+      else parts.push(`${k}: ${JSON.stringify(v)}`);
+    }
+    return parts.length ? parts.join(' | ') : 'Unknown Shopify error';
+  } catch {
+    return 'Unknown Shopify error';
+  }
 }
 
 export async function POST(req) {
@@ -53,25 +91,11 @@ export async function POST(req) {
   try { body = await req.json(); } catch { return badRequest('Invalid JSON body'); }
 
   const customer = body?.customer || {};
-  const items = Array.isArray(body?.items) ? body.items : [];
+  const itemsIn = Array.isArray(body?.items) ? body.items : [];
   const selections = body?.meta?.selections || undefined;
 
   if (!customer?.email) return badRequest('customer.email is required');
-  if (!items.length) return badRequest('items must contain at least one item');
-
-  // Coerce & validate shape
-  const line_items = [];
-  for (const it of items) {
-    const variantId = Number(it?.variantId);
-    const quantity = Number(it?.quantity ?? 1);
-    if (!Number.isFinite(variantId) || variantId <= 0) {
-      return badRequest('All items must have a valid numeric variantId');
-    }
-    if (!Number.isFinite(quantity) || quantity <= 0) {
-      return badRequest('All items must have a positive quantity');
-    }
-    line_items.push({ variant_id: variantId, quantity });
-  }
+  if (!itemsIn.length) return badRequest('items must contain at least one item');
 
   // Route store
   const storeKey = pickStoreByState(customer.state);
@@ -80,7 +104,26 @@ export async function POST(req) {
     return badRequest(`Missing env for store ${storeKey}. Ensure *_SHOP_DOMAIN and *_ADMIN_TOKEN are set.`);
   }
 
-  // NEW: Pre-validate variants in the target store
+  // Resolve per-store variant IDs and coerce quantities
+  const line_items = [];
+  for (const it of itemsIn) {
+    let variantId = it?.variantId;
+    if (!variantId && it?.variantIdByStore) {
+      const vbs = it.variantIdByStore || {};
+      variantId = storeKey === 'LINEX' ? vbs.linex : vbs.autospec;
+    }
+    const numId = Number(variantId);
+    const qty = Number(it?.quantity ?? 1);
+    if (!Number.isFinite(numId) || numId <= 0) {
+      return badRequest('Each item must include a valid variantId or variantIdByStore for the target store');
+    }
+    if (!Number.isFinite(qty) || qty <= 0) {
+      return badRequest('All items must have a positive quantity');
+    }
+    line_items.push({ variant_id: numId, quantity: qty });
+  }
+
+  // Validate variants exist in the target store (clearer 422s)
   const invalid = [];
   try {
     await Promise.all(line_items.map(async li => {
@@ -88,21 +131,19 @@ export async function POST(req) {
       if (!ok) invalid.push(li.variant_id);
     }));
   } catch (e) {
-    // Unexpected Shopify error while validating a variant
-    return shopifyError(e?.status ?? 500, e?.payload ?? { message: 'Variant validation error' });
+    return shopifyError(e?.status ?? 500, e?.payload ?? { message: 'Variant validation error' }, 'Variant validation error');
   }
-
   if (invalid.length) {
     return new Response(JSON.stringify({
       ok: false,
       error: 'invalid_variant_for_store',
       store: storeKey.toLowerCase(),
-      message: 'Some variant IDs do not exist in the target store. Use per-store variant IDs.',
+      message: 'One or more variant IDs do not exist in the target store.',
       invalidVariantIds: invalid
     }), { status: 422, headers: { 'content-type': 'application/json' } });
   }
 
-  // Build payload
+  // Build Draft Order payload (Shopify expects tags as a STRING)
   const draftPayload = {
     draft_order: {
       line_items,
@@ -129,12 +170,13 @@ export async function POST(req) {
     });
     shopJson = await shopRes.json().catch(() => ({}));
   } catch (e) {
-    return shopifyError(0, { message: 'Network error calling Shopify', detail: String(e) });
+    return shopifyError(0, { message: 'Network error calling Shopify', detail: String(e) }, 'Network error');
   }
 
   if (!shopRes.ok || !shopJson?.draft_order) {
     const payload = shopJson?.errors || shopJson || { message: 'Unknown Shopify error' };
-    return shopifyError(shopRes.status, payload);
+    const summary = summarizeShopifyErrors(payload);
+    return shopifyError(shopRes.status, payload, summary);
   }
 
   const d = shopJson.draft_order;

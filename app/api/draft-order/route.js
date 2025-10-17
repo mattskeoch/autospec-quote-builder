@@ -33,13 +33,24 @@ function shopifyError(status, payload) {
   });
 }
 
+async function variantExists(domain, token, variantId) {
+  const url = `https://${domain}/admin/api/2024-10/variants/${variantId}.json`;
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: { 'X-Shopify-Access-Token': token }
+  });
+  if (res.status === 404) return false;
+  if (!res.ok) {
+    // Treat other errors as unknown; bubble up so user sees payload
+    const j = await res.json().catch(() => ({}));
+    throw { status: res.status, payload: j };
+  }
+  return true;
+}
+
 export async function POST(req) {
   let body;
-  try {
-    body = await req.json();
-  } catch {
-    return badRequest('Invalid JSON body');
-  }
+  try { body = await req.json(); } catch { return badRequest('Invalid JSON body'); }
 
   const customer = body?.customer || {};
   const items = Array.isArray(body?.items) ? body.items : [];
@@ -48,6 +59,7 @@ export async function POST(req) {
   if (!customer?.email) return badRequest('customer.email is required');
   if (!items.length) return badRequest('items must contain at least one item');
 
+  // Coerce & validate shape
   const line_items = [];
   for (const it of items) {
     const variantId = Number(it?.variantId);
@@ -61,13 +73,36 @@ export async function POST(req) {
     line_items.push({ variant_id: variantId, quantity });
   }
 
+  // Route store
   const storeKey = pickStoreByState(customer.state);
   const { domain, token } = getStoreEnv(storeKey);
   if (!domain || !token) {
     return badRequest(`Missing env for store ${storeKey}. Ensure *_SHOP_DOMAIN and *_ADMIN_TOKEN are set.`);
   }
 
-  // IMPORTANT: Shopify expects `tags` as a comma-separated STRING, not an array.
+  // NEW: Pre-validate variants in the target store
+  const invalid = [];
+  try {
+    await Promise.all(line_items.map(async li => {
+      const ok = await variantExists(domain, token, li.variant_id);
+      if (!ok) invalid.push(li.variant_id);
+    }));
+  } catch (e) {
+    // Unexpected Shopify error while validating a variant
+    return shopifyError(e?.status ?? 500, e?.payload ?? { message: 'Variant validation error' });
+  }
+
+  if (invalid.length) {
+    return new Response(JSON.stringify({
+      ok: false,
+      error: 'invalid_variant_for_store',
+      store: storeKey.toLowerCase(),
+      message: 'Some variant IDs do not exist in the target store. Use per-store variant IDs.',
+      invalidVariantIds: invalid
+    }), { status: 422, headers: { 'content-type': 'application/json' } });
+  }
+
+  // Build payload
   const draftPayload = {
     draft_order: {
       line_items,
@@ -75,11 +110,12 @@ export async function POST(req) {
       note: selections ? `Quote Builder selections: ${JSON.stringify(selections)}` : undefined,
       shipping_address: normalizeAddress(customer),
       billing_address: normalizeAddress(customer),
-      tags: 'quote-builder', // ← changed from ['quote-builder'] to string
+      tags: 'quote-builder',
       use_customer_default_address: true,
     },
   };
 
+  // Create draft order
   const url = `https://${domain}/admin/api/2024-10/draft_orders.json`;
   let shopRes, shopJson;
   try {

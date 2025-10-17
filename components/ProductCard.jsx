@@ -1,7 +1,6 @@
 "use client";
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 export default function ProductCard({ name, selected, onToggle, productUrl, image, price }) {
@@ -27,7 +26,9 @@ export default function ProductCard({ name, selected, onToggle, productUrl, imag
 				<div className='flex items-start justify-between gap-3'>
 					<CardTitle className='text-base break-words whitespace-normal'>{name}</CardTitle>
 					{typeof price === "number" && price > 0 ? (
-						<Badge variant='secondary'>${price.toLocaleString()}</Badge>
+						<div className='px-2 py-0.5 rounded-md text-xs font-medium bg-muted'>
+							${price.toLocaleString()}
+						</div>
 					) : null}
 				</div>
 			</CardHeader>

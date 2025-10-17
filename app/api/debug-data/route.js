@@ -11,7 +11,7 @@ export async function GET() {
         name: i.name,
         stepId: i.stepId,
         vehicleTypeKeys: i.vehicleTypeKeys || [],
-        variantIdByStore: i.variantIdByStore
+        variantIdByStore: i.variantIdByStore,
       })),
       vehicles: data.vehicles,
       steps: data.steps.map(s => ({ id: s.id, title: s.title }))

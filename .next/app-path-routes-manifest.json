@@ -1,0 +1,7 @@
+{
+  "/_not-found/page": "/_not-found",
+  "/page": "/",
+  "/confirm/page": "/confirm",
+  "/api/draft-order/route": "/api/draft-order",
+  "/api/enrich/route": "/api/enrich"
+}

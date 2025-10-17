@@ -1,0 +1,18 @@
+{
+  "runtime": "edge",
+  "name": "api/enrich",
+  "deploymentTarget": "v8-worker",
+  "entrypoint": "index.js",
+  "assets": [],
+  "framework": {
+    "slug": "nextjs",
+    "version": "15.5.2"
+  },
+  "environment": {
+    "__NEXT_BUILD_ID": "EuZZh-fwWL_tUVpC0zqw4",
+    "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "GNlwCJ7C5bY1tA/t15QzpUjsoJsCglpbreLSw3lt49M=",
+    "__NEXT_PREVIEW_MODE_ID": "d772eecc3a4919c2685a233115945dd0",
+    "__NEXT_PREVIEW_MODE_SIGNING_KEY": "770896c240b6d91c780400d25e3fdf201ae32451ceefdf01991fcab92e7adf54",
+    "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "450d6469f53abc3f71aac8e20c4c0c206481f51035ee3ef6d5d501ab6d2bbb50"
+  }
+}

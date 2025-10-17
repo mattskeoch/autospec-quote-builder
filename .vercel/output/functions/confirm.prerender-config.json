@@ -1,0 +1,37 @@
+{
+  "type": "Prerender",
+  "expiration": false,
+  "group": 2,
+  "bypassToken": "d772eecc3a4919c2685a233115945dd0",
+  "experimentalBypassFor": [
+    {
+      "type": "header",
+      "key": "next-action"
+    },
+    {
+      "type": "header",
+      "key": "content-type",
+      "value": "multipart/form-data;.*"
+    }
+  ],
+  "fallback": {
+    "type": "FileFsRef",
+    "mode": 33188,
+    "fsPath": "confirm.prerender-fallback.html"
+  },
+  "initialHeaders": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/confirm/layout,_N_T_/confirm/page,_N_T_/confirm",
+    "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+  },
+  "allowQuery": [],
+  "allowHeader": [
+    "host",
+    "x-matched-path",
+    "x-prerender-revalidate",
+    "x-prerender-revalidate-if-generated",
+    "x-next-revalidated-tags",
+    "x-next-revalidate-tag-token"
+  ]
+}
